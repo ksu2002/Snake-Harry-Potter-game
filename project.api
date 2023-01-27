@@ -1,0 +1,76 @@
+# game.h menu.h
+!game.h graphics.h keys_n_colors.h stdio.h #<#>
+!main.cpp game.h graphics.h keys_n_colors.h menu.h stdio.h #<#>
+!menu.cpp game.h graphics.h keys_n_colors.h menu.h stdio.h #<#>
+!menu.h graphics.h keys_n_colors.h stdio.h #<#>
+!snake.cpp game.h graphics.h keys_n_colors.h limits.h menu.h stdio.h stdlib.h #<#>
+ struct@button _type_ #<menu.h>
+ struct@cell_snake _type_ #<game.h>
+CELL_SIZE #<snake.cpp>
+HEIGHT #<main.cpp>
+WIDTH #<main.cpp>
+WINDOW_HEIGHT #<snake.cpp>
+WINDOW_WIDTH #<snake.cpp>
+body : IMAGE* #<snake.cpp>
+button _type_ #<menu.h>
+cell_snake _type_ #<game.h>
+cell_type : enum #<game.h>
+change_direction(int* xhead, int* yhead, int* direction) -> int #<game.h>
+check_food_eaten(int** game_field, int is_food_eaten, int xhead, int yhead, int* snake_size, int* points) -> int #<game.h>
+check_game_over(int** game_field, cell_snake* snake, int is_game_over, int xhead, int yhead) -> int #<game.h>
+create_button(int posX, int posY, int sizeX, int sizeY, IMAGE* image) -> button #<menu.h>
+create_food(int* food_x, int* food_y, int is_food_eaten, int field_widht, int field_height, int** game_field) -> int #<game.h>
+create_game_field(int widht, int height) -> int** #<game.h>
+create_snake(int max_widht, int max_height) -> cell_snake* #<game.h>
+createmask(IMAGE* p) -> IMAGE* #<game.h>
+draw_game_field(int field_widht, int field_height, int** game_field) -> void #<game.h>
+draw_points(int points) -> void #<snake.cpp>
+draw_points(int points, int windowheigth) -> void #<game.h>
+draw_record(int windowheigth) -> void #<game.h>
+draw_record(void) -> void #<snake.cpp>
+draw_snake(cell_snake* snake, int direction) -> void #<game.h>
+draw_snake(cell_snake* snake, int direction, int snake_size) -> void #<snake.cpp>
+draw_snake_head(int direction, int xhead, int yhead) -> void #<game.h>
+draw_snake_tail(int xxtemp, int xtemp, int yytemp, int ytemp) -> void #<game.h>
+drawimage(int x, int y, IMAGE* m, IMAGE* p) -> void #<game.h>
+drawn_button(button butt) -> void #<menu.h>
+endimage : IMAGE* #<snake.cpp>
+exit(void) -> void #<menu.h>
+food : IMAGE* #<snake.cpp>
+foodBMP : IMAGE* #<snake.cpp>
+game_over(int points) -> void #<menu.h>
+head : IMAGE*[] #<snake.cpp>
+headBMP : IMAGE*[] #<snake.cpp>
+init_snake(int snake_size, int xhead, int yhead, cell_snake* snake, int** game_field) -> void #<snake.cpp>
+init_snake(int xhead, int yhead, cell_snake* snake, int** game_field) -> void #<game.h>
+is_click_button(button butt) -> int #<menu.h>
+main(void) -> int #<main.cpp>
+move_snake(int xhead, int yhead, cell_snake* snake, int snake_size, int** game_field) -> void #<game.h>
+offset_x_horiz : const int #<snake.cpp>
+offset_x_vertical : const int #<snake.cpp>
+offset_y_horiz : const int #<snake.cpp>
+offset_y_vertical : const int #<snake.cpp>
+play_game(void) -> void #<menu.h>
+play_snake_game(void) -> int #<menu.h>
+pole : IMAGE* #<snake.cpp>
+select_button(button butt) -> int #<menu.h>
+show_about(void) -> void #<menu.h>
+show_menu(void) -> void #<menu.h>
+show_record(void) -> void #<menu.h>
+show_rules(void) -> void #<menu.h>
+show_splash_screen() -> void #<menu.cpp>
+show_splash_screen(void) -> void #<menu.h>
+snake_head_direction : enum #<game.h>
+sword : IMAGE* #<snake.cpp>
+swordBMP : IMAGE* #<snake.cpp>
+tail : IMAGE*[] #<snake.cpp>
+tailBMP : IMAGE*[] #<snake.cpp>
+wall : IMAGE* #<snake.cpp>
+	button::posX : int #<menu.h>
+	button::posY : int #<menu.h>
+	button::sizeX : int #<menu.h>
+	button::sizeY : int #<menu.h>
+	button::image : IMAGE* #<menu.h>
+	cell_snake::i : int #<game.h>
+	cell_snake::j : int #<game.h>
+	cell_snake::value : int #<game.h>

@@ -1,0 +1,361 @@
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 768
+#define CELL_SIZE 64
+#include<stdio.h>
+#include <stdlib.h>
+#include "graphics.h"
+#include "game.h"
+#include "menu.h"
+IMAGE *createmask(IMAGE *p) {// функция для создания маски
+   int w = imagewidth(p);
+   int h = imageheight(p);
+   IMAGE *m = createimage(w, h);
+   int c = imagegetpixel(p, 0, 0);
+   for (int x = 0; x < w; ++x)
+      for (int y = 0; y < h; ++y)
+      {
+         int d = imagegetpixel(p, x, y);
+         if (c == d) {
+            imageputpixel(m, x, y, WHITE);
+            imageputpixel(p, x, y, BLACK);
+         }
+         else
+            imageputpixel(m, x, y, BLACK);
+      }
+   return m;
+}
+
+void drawimage(int x, int y, IMAGE *m, IMAGE *p) {
+   putimage(x, y, m, AND_PUT);
+   putimage(x, y, p, OR_PUT);
+}
+
+IMAGE *pole; // изображение поля
+IMAGE *wall; // изображение стены
+IMAGE *endimage;
+IMAGE *body;
+IMAGE *foodBMP;
+IMAGE *food;
+IMAGE *swordBMP;
+IMAGE *sword;
+IMAGE *tailBMP[4];//изображения хвоста
+IMAGE *tail[4]; //маски изображений хвоста
+IMAGE *headBMP[4] ;//изображения головы
+IMAGE *head[4];//маски изображений головы
+int **create_game_field(int widht,
+                        int height
+                       ) {//создание игрового поля
+   int **game_field;
+   int i, j;
+   game_field = (int **)calloc(widht, sizeof(int *));
+   for (i = 0; i < widht; i++)// {
+      game_field[i] = (int *)calloc(height, sizeof(int));
+   //    for (j = 0; j < height; j++)
+   //     if (i == 0 || j == 0 || i == widht - 1 || j == height - 1)
+   //      game_field[i][j] = WALL;
+//  }
+   return game_field;
+}
+
+cell_snake *create_snake(int max_widht,
+                         int max_height
+                        ) {//создание змейки
+   cell_snake *snake = (cell_snake *)calloc((max_widht * max_height),
+                       sizeof(cell_snake));
+   return snake;
+}
+
+void init_snake(int snake_size, int xhead, int yhead, cell_snake *snake,
+                int **game_field
+               ) {//инициализация змейки
+   snake[0].i = xhead;
+   snake[0].j = yhead;
+   game_field[xhead][yhead] = HEAD_SNAKE;
+   snake[0].value = game_field[xhead][yhead];
+   for (int k = 1; k < snake_size; k++) {
+      snake[k].i = xhead - k;
+      snake[k].j = yhead;
+      game_field[xhead - k][yhead] = k + HEAD_SNAKE;
+      snake[k].value = game_field[xhead - k][yhead];
+   }
+}
+
+void draw_game_field(int field_widht, int field_height,
+                     int **game_field
+                    ) {//отрисовка игрового поля
+   int i, j;
+   putimage(CELL_SIZE, CELL_SIZE, pole, COPY_PUT);
+   for (i = 0; i < field_widht; i++)
+      for (j = 0; j < field_height; j++)
+         if (i == 0 || j == 0 || i == field_widht - 1|| j == field_height - 1)
+            game_field[i][j] = WALL;
+         else
+            game_field[i][j] = FIELD;
+   for (int x = 0; x < WINDOW_WIDTH; x += CELL_SIZE)
+      for (int y = 0; y < WINDOW_HEIGHT - CELL_SIZE; y += CELL_SIZE) {
+         i = x / CELL_SIZE;
+         j = y / CELL_SIZE;
+         if (game_field[i][j] == WALL)
+            putimage(x, y, wall, COPY_PUT);
+      }
+}
+
+void draw_record(void) { //вывод рекорда на экран
+   FILE *record;
+   record = fopen("record.txt", "r");
+   int rec;
+   char bufferrec[100];
+   fscanf(record, "%d", &rec);
+   rec = snprintf(bufferrec, 100, " %d", rec);
+   outtextxy(380, WINDOW_HEIGHT - 60, bufferrec);
+   outtextxy(300, WINDOW_HEIGHT - 60, "Рекорд:");
+   fclose(record);
+}
+
+void draw_points(int points) {// вывод текущего счёта на экран
+   int score = points;
+   char buffer[100];
+   score = snprintf(buffer, 100, " %d", score);
+   outtextxy(120, WINDOW_HEIGHT - 60, buffer);
+   outtextxy(10, WINDOW_HEIGHT - 60, "Текущий счёт:");
+}
+
+void move_snake(
+   int xhead,
+   int yhead,
+   cell_snake *snake,
+   int snake_size,
+   int **game_field
+) { // расположение змеи
+   delay(200);
+   int xxtemp, yytemp;
+   int xtemp = snake[0].i;
+   int ytemp = snake[0].j;
+   snake[0].i = xhead;
+   snake[0].j = yhead;
+   game_field[xhead][yhead] = HEAD_SNAKE;
+   snake[0].value = game_field[xhead][yhead];
+   for (int k = 1; k < snake_size; k++) {
+      xxtemp = snake[k].i;
+      yytemp = snake[k].j;
+      game_field[xxtemp][yytemp] = k + HEAD_SNAKE;
+      snake[k].value = game_field[xxtemp][yytemp];
+      snake[k].i = xtemp;
+      snake[k].j = ytemp;
+      xtemp = xxtemp;
+      ytemp = yytemp;
+   }
+}
+
+int change_direction(int *xhead, int *yhead, int *direction) { //смена направления движения змеи
+   if (kbhit()) {
+      int k=getch();
+      if (k==0) k=getch();
+      switch (k) {
+      case KEY_RIGHT:
+         *direction = RIGHT;
+         break;
+      case KEY_LEFT:
+         *direction = LEFT;
+         break;
+      case KEY_DOWN:
+         *direction = DOWN;
+         break;
+      case KEY_UP:
+         *direction = UP;
+         break;
+      }
+   }
+   if (*direction == RIGHT)(*xhead)++;
+   if (*direction == LEFT)(*xhead)--;
+   if (*direction == DOWN)(*yhead)++;
+   if (*direction == UP)(*yhead)--;
+   return *direction;
+}
+
+const int offset_y_horiz = 10;
+const int offset_y_vertical = 34;
+const int offset_x_horiz = 26;
+const int offset_x_vertical = 4;
+
+void draw_snake_tail(int xxtemp, int xtemp, int yytemp, int ytemp) {//отрисовка хвоста змеи
+   if (xtemp > xxtemp) 
+      drawimage(xxtemp * CELL_SIZE, yytemp * CELL_SIZE, tail[0], tailBMP[0]);
+   if (xtemp < xxtemp) 
+      drawimage(xxtemp * CELL_SIZE, yytemp * CELL_SIZE, tail[1], tailBMP[1]);
+   if (ytemp > yytemp) 
+      drawimage(xxtemp * CELL_SIZE, yytemp * CELL_SIZE, tail[2], tailBMP[2]);
+   if (ytemp < yytemp) 
+      drawimage(xxtemp * CELL_SIZE, yytemp * CELL_SIZE, tail[3], tailBMP[3]);
+}
+
+void draw_snake_head(int direction,int xhead, int yhead) { //отрисовка головы змеи
+   if (direction == RIGHT)
+      drawimage(xhead * CELL_SIZE, yhead * CELL_SIZE - offset_y_horiz, head[0], headBMP[0]);
+   if (direction == LEFT) 
+      drawimage(xhead * CELL_SIZE - offset_x_horiz, yhead * CELL_SIZE - offset_y_horiz, head[1], headBMP[1]);
+   if (direction == DOWN) 
+      drawimage(xhead * CELL_SIZE - offset_x_vertical, yhead * CELL_SIZE, head[2], headBMP[2]);
+   if (direction == UP) 
+      drawimage(xhead * CELL_SIZE - offset_x_vertical, yhead * CELL_SIZE - offset_y_vertical, head[3], headBMP[3]);
+}
+
+void draw_snake(cell_snake *snake, int direction, int snake_size) {// отрисовка змеи
+   for (int k = 1; k < snake_size - 1; k++) 
+      putimage(snake[k].i * CELL_SIZE, snake[k].j * CELL_SIZE, body, COPY_PUT);// отрисовка тела змеи
+   
+   draw_snake_tail(snake[snake_size - 1].i, snake[snake_size - 2].i, snake[snake_size - 1].j, snake[snake_size - 2].j);
+   draw_snake_head(direction, snake[0].i, snake[0].j);
+}
+
+int create_food(
+   int *food_x,
+   int *food_y,
+   int is_food_eaten,
+   int field_widht,
+   int field_height,
+   int **game_field
+) {// функция создания еды
+   if (is_food_eaten == 1) {
+      while (game_field[*food_x][*food_y] != FIELD)
+      {
+         *food_x = rand() % field_widht;
+         *food_y = rand() % field_height;
+      }
+      is_food_eaten = 0;
+   }
+   game_field[*food_x][*food_y] = FOOD;
+   int x = *food_x * CELL_SIZE;
+   int y = *food_y * CELL_SIZE;
+   drawimage(x, y, food, foodBMP);
+   return is_food_eaten;
+}
+
+int check_game_over(
+   int **game_field,
+   cell_snake *snake,
+   int is_game_over,
+   int xhead,
+   int yhead
+) {//проверка на проигрыш
+   if (game_field[xhead][yhead] > FIELD) {
+      drawimage(snake[0].i * CELL_SIZE, snake[0].j * CELL_SIZE,
+                sword, swordBMP);
+      is_game_over = 1;
+   }
+   return is_game_over;
+}
+
+int  check_food_eaten(int **game_field, int is_food_eaten,
+                      int xhead, int yhead,
+                      int *snake_size, int *points
+                     ) {//проверка на собирание еды
+   if (game_field[xhead][yhead] == FOOD) {
+      is_food_eaten = 1;
+      (*snake_size)++;
+      (*points)++;
+   }
+   return is_food_eaten;
+}
+
+int play_snake_game(void) {
+   initwindow(WINDOW_WIDTH, WINDOW_HEIGHT);
+   int field_height = WINDOW_HEIGHT / CELL_SIZE - 1;
+   int field_widht = WINDOW_WIDTH / CELL_SIZE;
+   int **game_field = create_game_field(field_widht,
+                                        field_height);//создание игрового поля
+   cell_snake *snake = create_snake(
+                          field_widht - 1,
+                          field_height - 2
+                       );//создание змеи
+   int snake_size = 3;
+   int direction = RIGHT;
+   int prev_direction = direction;
+   int xhead = 9, yhead = 9;
+   init_snake(snake_size, xhead, yhead, snake, game_field);
+   int points = 0;
+   int food_x = 6, food_y = 5;//еда
+   int is_food_eaten = 1;
+   int is_game_over = 0;
+   int pp = 0; // сначала текущая видимая страница 0
+   int t = 0; // номер кадра (время)
+   pole = loadBMP("pole.bmp"); // изображение поля
+   wall = loadBMP("wall.bmp"); // изображение стены
+   endimage = loadBMP("end.bmp");
+   body = loadBMP("body.bmp");
+   foodBMP = loadBMP("food.bmp");
+   food = createmask(foodBMP);
+   swordBMP = loadBMP("sword.bmp");
+   sword = createmask(swordBMP);
+//изображения хвоста
+   tailBMP[0] = loadBMP("tailleft.bmp");
+   tailBMP[1] = loadBMP("tailright.bmp");
+   tailBMP[2] = loadBMP("tailup.bmp");
+   tailBMP[3] = loadBMP("taildown.bmp");
+
+   //изображения головы
+   headBMP[0] = loadBMP("headright.bmp");
+   headBMP[1] = loadBMP("headleft.bmp");
+   headBMP[2] = loadBMP("headdown.bmp");
+   headBMP[3] = loadBMP("headup.bmp");
+
+   for (int i = 0; i<4; i++) {//маска изображений головы и хвоста
+      head[i] = createmask(headBMP[i]);
+      tail[i] = createmask(tailBMP[i]);
+   }
+   while (1) {
+      pp = 1 - pp;
+      setactivepage(pp); // активная страница == 1-видимая
+      setbkcolor(BLACK); // цвет фона
+      clearviewport(); // закраска текущей страницы цветом фона
+      ++t;
+      draw_game_field(field_widht, field_height, game_field);
+      draw_record();  //вывод рекорда на экран
+      draw_points(points);
+      button buttonend = create_button(780, 710, 200, 50,
+                                       endimage);
+      drawn_button(buttonend);
+      if (select_button(buttonend) == 1) {//выход в главное меню
+         is_game_over = 1;
+      }
+      move_snake(xhead, yhead, snake, snake_size,
+                 game_field);
+      direction = change_direction(&xhead, &yhead, &direction);
+      draw_snake(snake, prev_direction, snake_size);
+      prev_direction = direction;
+      if (is_game_over == 1) {
+         delay(400);
+         break;
+      }
+      is_food_eaten = create_food(&food_x, &food_y, is_food_eaten,
+                                  field_widht,
+                                  field_height,
+                                  game_field);
+      is_game_over = check_game_over(game_field, snake,
+                                     is_game_over,
+                                     xhead,
+                                     yhead);
+      is_food_eaten = check_food_eaten(game_field, is_food_eaten,
+                                       xhead, yhead, &snake_size, &points);
+      setvisualpage(pp); // делаем активную страницу видимой
+   }
+   for (int i = 0; i < field_widht; i++)  // цикл по строкам
+      free(game_field[i]);   // освобождение памяти под строку
+   free(game_field);
+   free(snake);
+   freeimage(pole);
+   freeimage(wall);
+   freeimage(endimage);
+   freeimage(body);
+   freeimage(foodBMP);
+   freeimage(food);
+   freeimage(swordBMP);
+   freeimage(sword);
+   for (int i = 0; i<4; i++) {
+      freeimage(headBMP[i]);
+      freeimage(head[i]);
+      freeimage(tailBMP[i]);
+      freeimage(tail[i]);
+   }
+   return points;
+}
