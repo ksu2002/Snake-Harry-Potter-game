@@ -4,9 +4,7 @@
 #include "graphics.h"
 #include "game.h"
 #include "menu.h"
-button create_button(int posX, int posY, int sizeX, int sizeY,
-                     IMAGE *image
-                    ) {//конструктор создания кнопки
+button create_button(int posX, int posY, int sizeX, int sizeY, IMAGE *image) {//конструктор создания кнопки
    button buf;
    buf.posX = posX;
    buf.posY = posY;

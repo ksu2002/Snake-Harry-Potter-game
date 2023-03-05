@@ -3,7 +3,7 @@
 TARGET = release
 
 CSOURCES = $(wildcard *.c)
-CPPSOURCES = $(filter-out %_unittest.cpp,$(wildcard *.cpp))
+CPPSOURCES = $(filter-out %_unittest.cpp %_featuretest.cpp,$(wildcard *.cpp))
 
 SMSOURCES = $(wildcard statemachine*.uxf)
 SMGENERH = $(patsubst %.uxf,$(TARGET)/%.hpp,$(SMSOURCES))
@@ -27,7 +27,7 @@ endif
 
 ifneq (,$(GRMSOURCE))
 GRMGENER = $(TARGET)/y.tab.cpp
-GRMHEADER = $(TARGET)/y.tab.h
+GRMHEADER = $(TARGET)/y.tab.hpp
 else
 GRMGENER =
 GRMHEADER =
@@ -77,9 +77,7 @@ $(LEXGENER): $(LEXSOURCE)
 	reflex --flex -o$(LEXGENER) $<
 
 $(GRMGENER) $(GRMHEADER): $(GRMSOURCE)
-	bison -o$(GRMGENER) -d $<
-	ifexist.cmd $(TARGET)/y.tab.h "del $(TARGET)\y.tab.h"
-	ren $(TARGET)\y.tab.hpp y.tab.h
+	bison -Werror=conflicts-sr,conflicts-rr -Wcounterexamples -o$(GRMGENER) -d $<
 
 
 $(TARGET)/%.cpp $(TARGET)/%.hpp: %.uxf
@@ -88,7 +86,7 @@ $(TARGET)/%.cpp $(TARGET)/%.hpp: %.uxf
 $(TARGET)/%.cpp $(TARGET)/%.hpp $(TARGET)/%.lex.cpp $(TARGET)/%.grm.cpp: %.caio
 	caio -o$(TARGET)/ $<
 	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.lex,$<) "reflex --flex -o$(TARGET)/$(patsubst %.caio,%.lex.cpp,$<) $(TARGET)/$(patsubst %.caio,%.lex,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.lex.cpp,$<)"
-	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.grm,$<) "bison -Wno-other -o$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<) $(TARGET)/$(patsubst %.caio,%.grm,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<)"
+	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.grm,$<) "bison -Werror=conflicts-sr,conflicts-rr -Wcounterexamples -o$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<) $(TARGET)/$(patsubst %.caio,%.grm,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<)"
 
 $(TARGET)/%.o: %.cpp $(CPPHEADERS) $(HS)
 	$(GPP) $(CCFLAGS) $(if $(filter uc%,$<),$(CCCS),$(CCCW)) -o $@ -I. -I$(TARGET) -c $<
@@ -109,14 +107,14 @@ $(TARGET)/%.exe: %.lex Makefile
 
 $(TARGET)/%.exe: %.grm Makefile
 	$(if $(wildcard $(TARGET)),,mkdir $(TARGET))
-	bison -o$(TARGET)/y.tab.cpp $<
+	bison -Werror=conflicts-sr,conflicts-rr -Wcounterexamples -o$(TARGET)/y.tab.cpp $<
 	$(GPP) $(CCFLAGS) $(LFLAGS) $(if $(filter uc%,$<),$(CCCS),$(CCCW)) -o $(TARGET)/$(patsubst %.grm,%,$<) -I. -I$(TARGET) $(TARGET)/y.tab.cpp $(INIT) $(addprefix -l,$(CPPLIBS))
 
 $(TARGET)/%.exe: %.caio Makefile
 	$(if $(wildcard $(TARGET)),,mkdir $(TARGET))
 	caio.exe -o$(TARGET)/ $<
 	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.lex,$<) "reflex --flex -o$(TARGET)/$(patsubst %.caio,%.lex.cpp,$<) $(TARGET)/$(patsubst %.caio,%.lex,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.lex.cpp,$<)"
-	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.grm,$<) "bison -Wno-other -o$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<) $(TARGET)/$(patsubst %.caio,%.grm,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<)"
+	ifexist.cmd $(TARGET)/$(patsubst %.caio,%.grm,$<) "bison -Werror=conflicts-sr,conflicts-rr -Wcounterexamples -o$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<) $(TARGET)/$(patsubst %.caio,%.grm,$<)" "echo // >$(TARGET)/$(patsubst %.caio,%.grm.cpp,$<)"
 	$(GPP) $(CCFLAGS) $(LFLAGS) -o $(TARGET)/$(patsubst %.caio,%,$<) $(TARGET)/$(patsubst %.caio,%.cpp,$<) $(TARGET)/$(patsubst %.caio,%.lex.cpp,$<) $(TARGET)/$(patsubst %.caio,%.grm.cpp,$<) $(INIT) $(addprefix -l,$(CPPLIBS))
 
 $(TARGET)/%.exe: %.c Makefile

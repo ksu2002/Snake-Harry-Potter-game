@@ -3,16 +3,14 @@
 #include<stdio.h>
 #include "graphics.h"
 typedef struct button {//структура кнопки
-   int posX;
-   int posY;
-   int sizeX;
-   int sizeY;
-   IMAGE *image;
+	int posX;
+	int posY;
+	int sizeX;
+	int sizeY;
+	IMAGE* image;
 } button;
 
-button create_button(int posX, int posY, int sizeX,
-                     int sizeY, IMAGE *image
-                    );//конструктор создания кнопки
+button create_button(int posX, int posY, int sizeX, int sizeY, IMAGE* image);//конструктор создания кнопки
 void drawn_button(button butt); //функция отрисовки кнопки
 int is_click_button(button butt);
 int select_button(button butt);//функция проверки нажатия кнопки
